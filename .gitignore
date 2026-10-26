@@ -1,0 +1,16 @@
+# Entornos virtuales y caché de Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.env
+.venv/
+venv/
+
+# IDEs
+.vscode/
+.idea/
+
+# Sistema
+*.log
+Thumbs.db
+Desktop.ini
