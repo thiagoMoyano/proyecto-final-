@@ -1,53 +1,57 @@
-# api_clima.py
-# Este archivo se encarga exclusivamente de conectarse con el servidor de Open-Meteo
-# y traer los datos del clima en formato crudo (JSON / Diccionario).
+# ==============================================================================
+# ARCHIVO: api_clima.py
+# PROPÓSITO: Conectarse al servidor gratuito de Open-Meteo y descargar los datos
+#            meteorológicos crudos (en formato diccionario JSON) para Mendoza.
+# ==============================================================================
 
+
+# ==============================================================================
+# SECCIÓN 1: IMPORTACIÓN DE LIBRERÍAS
+# ==============================================================================
 import requests
 
-def obtener_datos_clima(latitud, longitud):
-    # Definimos la dirección web (URL) del servicio gratuito de Open-Meteo.
-    # No requiere contraseña ni clave privada (API Key), lo cual es ideal para aprender.
+
+# ==============================================================================
+# SECCIÓN 2: CONFIGURACIÓN DE COORDENADAS POR DEFECTO (MENDOZA, ARGENTINA)
+# ==============================================================================
+LATITUD_MENDOZA = -32.8895
+LONGITUD_MENDOZA = -68.8458
+
+
+# ==============================================================================
+# SECCIÓN 3: FUNCIÓN DE CONSULTA A LA API METEOROLÓGICA
+# ==============================================================================
+def obtener_datos_crudos_clima(latitud=LATITUD_MENDOZA, longitud=LONGITUD_MENDOZA):
+    # Dirección web del servicio meteorológico gratuito Open-Meteo
     url_base = "https://api.open-meteo.com/v1/forecast"
 
-    # Preparamos un diccionario con los parámetros que le enviaremos al servidor.
-    # Le indicamos las coordenadas geográficas, qué dato queremos (temperatura a 2 metros del suelo)
-    # y que solo nos entregue el pronóstico de 1 día (las próximas 24 horas).
+    # Diccionario con los parámetros que pedimos al servidor:
+    # - Datos diarios: código de clima, temperatura máxima y mínima
+    # - Datos por hora (24h x 7 días): temperatura, probabilidad de lluvia,
+    #   nubosidad (para calcular qué tan soleado estará) y humedad relativa.
     parametros = {
         "latitude": latitud,
         "longitude": longitud,
-        "hourly": "temperature_2m",
-        "forecast_days": 1
+        "daily": "weather_code,temperature_2m_max,temperature_2m_min",
+        "hourly": "temperature_2m,precipitation_probability,cloud_cover,relative_humidity_2m,weather_code",
+        "forecast_days": 7,
+        "timezone": "auto"
     }
 
-    # Usamos un bloque try / except como 'red de seguridad'.
-    # Si ocurre un error imprevisto (como quedarnos sin internet), el programa no se detendrá
-    # de golpe con una pantalla roja de error, sino que atrapará el fallo de forma controlada.
+    # Red de seguridad por si no hay conexión a internet
     try:
-        print("-> Conectando con el servicio meteorológico...")
-        
-        # Realizamos la petición HTTP GET. Es equivalente a cuando escribes una dirección
-        # en tu navegador web y presionas Enter para pedir la página.
-        respuesta = requests.get(url_base, params=parametros)
+        print("-> Conectando con el servidor de Open-Meteo (Mendoza)...")
+        respuesta = requests.get(url_base, params=parametros, timeout=10)
 
-        # Verificamos si la respuesta del servidor fue exitosa (código de estado 200).
-        # Si el servidor nos devuelve un código de error (como 404 o 500), entrará en el else.
+        # Si el código es 200 significa que la descarga fue exitosa
         if respuesta.status_code == 200:
-            print("-> ¡Datos recibidos con éxito desde la nube!")
-            
-            # Convertimos la respuesta de texto plano que viene de la web
-            # en un diccionario nativo de Python para que podamos manipularlo fácilmente.
+            print("-> ¡Datos meteorológicos descargados con éxito!")
             datos_diccionario = respuesta.json()
             return datos_diccionario
         else:
-            # Si el servidor respondió pero con un código de error, mostramos el código.
-            print("-> El servidor respondió con un error. Código:", respuesta.status_code)
+            print("-> El servidor respondió con error. Código:", respuesta.status_code)
             return None
 
     except Exception as error:
-        # Si se corta el cable de red, no hay Wi-Fi o la URL está mal escrita,
-        # la ejecución salta directo a este bloque.
-        print("-> Ocurrió un problema de conexión al intentar obtener el clima.")
-        print("-> Detalle técnico del error:", error)
-        
-        # Devolvemos None para que quien llame a esta función sepa que la operación falló.
+        print("-> Error de conexión al consultar el clima:", error)
         return None

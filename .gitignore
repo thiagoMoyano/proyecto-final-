@@ -5,6 +5,7 @@ __pycache__/
 *.env
 .venv/
 venv/
+grafico_actual.png
 
 # IDEs
 .vscode/
